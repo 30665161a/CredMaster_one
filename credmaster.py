@@ -506,6 +506,13 @@ class CredMaster(object):
 
 		self.log_entry(f"APIs removed: {clear_count}")
 
+	def log_special_error(self, code, username, password):
+		self.lock_success.acquire()
+		filename = f"credmaster-{code}.txt"
+		with open(filename, 'a+', encoding='utf-8') as f:
+			f.write(f"{username}:{password}\n")
+		self.lock_success.release()
+
 
 	def spray_thread(self, api_key, api_dict, pluginargs):
 
@@ -541,7 +548,11 @@ class CredMaster(object):
 				# 	print(response["debug"])
 
 				if response["error"]:
-					self.log_entry(f"ERROR: {api_key}: {cred['username']} - {response['output']}")
+					output = response["output"]
+					self.log_entry(f"ERROR: {api_key}: {cred['username']} - {output}")
+					for code in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016"]:
+						if code in output:
+							self.log_special_error(code, cred["username"], cred["password"])
 
 				if response["result"].lower() == "success" and ("userenum" not in pluginargs):
 					self.results.append( {"username" : cred["username"], "password" : cred["password"]} )
@@ -551,19 +562,18 @@ class CredMaster(object):
 				if response["valid_user"] or response["result"] == "success":
 					self.log_valid(cred["username"], self.plugin)
 
+				output = response["output"]
 				if self.color:
-
-					if response["result"].lower() == "success":
-						self.log_entry(utils.prGreen(f"{api_key}: {response['output']}"))
-
+					if any(err in output for err in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016"]):
+						self.log_entry(utils.prYellow(f"{api_key}: {output}"))
+					elif response["result"].lower() == "success":
+						self.log_entry(utils.prGreen(f"{api_key}: {output}"))
 					elif response["result"].lower() == "potential":
-						self.log_entry(utils.prYellow(f"{api_key}: {response['output']}"))
-
+						self.log_entry(utils.prYellow(f"{api_key}: {output}"))
 					elif response["result"].lower() == "failure":
-						self.log_entry(utils.prRed(f"{api_key}: {response['output']}"))
-
+						self.log_entry(utils.prRed(f"{api_key}: {output}"))
 				else:
-					self.log_entry(f"{api_key}: {response['output']}")
+					self.log_entry(f"{api_key}: {output}")
 
 				self.q_spray.task_done()
 			except Exception as ex:
