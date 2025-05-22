@@ -564,7 +564,7 @@ class CredMaster(object):
 
 				output = response["output"]
 				if self.color:
-					if any(err in output for err in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016"]):
+					if any(err in output for err in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016", "AADSTS50057"]):
 						self.log_entry(utils.prYellow(f"{api_key}: {output}"))
 					elif response["result"].lower() == "success":
 						self.log_entry(utils.prGreen(f"{api_key}: {output}"))
