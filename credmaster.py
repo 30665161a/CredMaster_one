@@ -550,7 +550,7 @@ class CredMaster(object):
 				if response["error"]:
 					output = response["output"]
 					self.log_entry(f"ERROR: {api_key}: {cred['username']} - {output}")
-					for code in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016"]:
+					for code in ["AADSTS7000112", "AADSTS7000218", "AADSTS700016", "AADSTS50057"]:
 						if code in output:
 							self.log_special_error(code, cred["username"], cred["password"])
 
